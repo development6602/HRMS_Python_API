@@ -1,0 +1,533 @@
+{
+  "AI-ML Engineer": {
+    "tech_stack": {
+      "max_score": 20,
+      "core_skills": [
+        {
+          "name": "Python",
+          "keywords": ["python", "python3"],
+          "points": 5
+        },
+        {
+          "name": "LLM & Agent Frameworks (LangChain / LangGraph / LlamaIndex / Openclaw / CrewAI)",
+          "keywords": [
+            "langchain",
+            "langgraph",
+            "lang graph",
+            "llamaindex",
+            "llama index",
+            "openclaw",
+            "open claw",
+            "crewai",
+            "crew ai",
+            "autogen"
+          ],
+          "points": 5
+        },
+        {
+          "name": "RAG (Retrieval-Augmented Generation)",
+          "keywords": [
+            "rag",
+            "retrieval-augmented generation",
+            "retrieval augmented generation"
+          ],
+          "points": 5
+        },
+        {
+          "name": "ML & Deep Learning Frameworks (PyTorch / TensorFlow / Scikit-learn)",
+          "keywords": [
+            "pytorch",
+            "tensorflow",
+            "scikit-learn",
+            "scikit learn",
+            "sklearn",
+            "keras"
+          ],
+          "points": 1
+        }
+      ],
+      "good_to_have": [
+        {
+          "name": "FastAPI",
+          "keywords": ["fastapi", "fast-api"],
+          "points": 2
+        },
+        {
+          "name": "Flask",
+          "keywords": ["flask"],
+          "points": 1
+        },
+        {
+          "name": "Django",
+          "keywords": ["django", "drf", "django rest framework"],
+          "points": 1
+        }
+      ]
+    },
+    "education": {
+      "max_score": 15,
+      "standalone_degrees": [
+        {
+          "name": "Master of Computer Applications (MCA)",
+          "keywords": ["mca", "m.c.a", "m.c.a.", "master of computer applications", "master in computer applications"]
+        },
+        {
+          "name": "Bachelor of Computer Applications (BCA)",
+          "keywords": ["bca", "b.c.a", "b.c.a.", "bachelor of computer applications"]
+        }
+      ],
+      "degree_levels": [
+        {
+          "name": "B.Tech / B.E.",
+          "keywords": ["b.tech", "btech", "b. tech", "bachelor of technology", "b.e", "b.e.", "be", "bachelor of engineering"]
+        },
+        {
+          "name": "B.Sc",
+          "keywords": ["b.sc", "bsc", "b.sc.", "b. sc", "bachelor of science"]
+        },
+        {
+          "name": "M.Sc",
+          "keywords": ["m.sc", "msc", "m.sc.", "m. sc", "master of science"]
+        },
+        {
+          "name": "M.Tech / M.E.",
+          "keywords": ["m.tech", "mtech", "m. tech", "master of technology", "m.e", "m.e.", "me", "master of engineering"]
+        }
+      ],
+      "qualifying_branches": [
+        "information technology",
+        "computer engineering",
+        "computer science and engineering",
+        "computer science & engineering",
+        "computer science",
+        "cse",
+        "it",
+        "ce",
+        "cs",
+        "ai and machine learning",
+        "ai & machine learning",
+        "artificial intelligence and machine learning",
+        "artificial intelligence",
+        "ai-ml",
+        "ai/ml",
+        "data science",
+        "cyber security",
+        "information security"
+      ]
+    },
+    "experience": {
+      "max_score": 5,
+      "max_allowed_gap_months": 3,
+      "gap_rules": [
+        {
+          "min_months": 0,
+          "max_months": 3,
+          "score": 5,
+          "status": "No Gap Detected (Continuous)"
+        },
+        {
+          "min_months": 3,
+          "max_months": 6,
+          "score": 3.5,
+          "status": "Minor Gap (3-6 Months)"
+        },
+        {
+          "min_months": 6,
+          "max_months": 12,
+          "score": 2,
+          "status": "Moderate Gap (6-12 Months)"
+        },
+        {
+          "min_months": 12,
+          "max_months": 999,
+          "score": 1,
+          "status": "Significant Gap (>1 Year)"
+        }
+      ]
+    },
+    "projects": {
+      "max_score": 5,
+      "relevant_keywords": [
+        "rag", "llm", "large language model", "agent", "langgraph", "langchain", "llamaindex",
+        "deep learning", "cnn", "rnn", "lstm", "nlp", "computer vision", "machine learning",
+        "deepfake", "detection", "classification", "yolo", "opencv", "tensorflow", "pytorch",
+        "fastapi", "flask", "ai", "mcp"
+      ]
+    },
+    "certifications": {
+      "max_score": 2,
+      "reputed_issuers": [
+        "aws", "amazon web services", "azure", "google cloud", "gcp", "coursera",
+        "deeplearning.ai", "nvidia", "ibm", "meta", "udemy", "nptel", "kaggle",
+        "hackerrank", "leetcode", "oracle", "edx", "stanford", "microsoft",
+        "linkedin learning", "freecodecamp"
+      ],
+      "achievement_keywords": [
+        "hackathon", "winner", "runner up", "1st place", "2nd place", "second place",
+        "1st prize", "2nd prize", "top 1%", "top 5%", "top 10%", "finalist",
+        "research paper", "published paper", "ieee", "springer", "patent",
+        "scholarship", "olympiad", "rank", "codechef", "codeforces", "icpc"
+      ]
+    },
+    "location": {
+      "max_score": 3,
+      "tier_1": {
+        "name": "Surat (Local)",
+        "keywords": ["surat"],
+        "score": 3
+      },
+      "tier_2": {
+        "name": "Ahmedabad / Gandhinagar / Vadodara",
+        "keywords": ["ahmedabad", "gandhinagar", "vadodara", "baroda"],
+        "score": 2
+      }
+    }
+  },
+  "Python Developer": {
+    "tech_stack": {
+      "max_score": 20,
+      "core_skills": [
+        {
+          "name": "Python",
+          "keywords": ["python", "python3"],
+          "points": 5
+        },
+        {
+          "name": "FastAPI",
+          "keywords": ["fastapi", "fast-api"],
+          "points": 4
+        },
+        {
+          "name": "Django",
+          "keywords": ["django", "drf", "django rest framework"],
+          "points": 3
+        },
+        {
+          "name": "Flask",
+          "keywords": ["flask"],
+          "points": 2
+        }
+      ],
+      "good_to_have": [
+        {
+          "name": "Web Scraping & Data Extraction",
+          "keywords": [
+            "web scraping",
+            "data scraping",
+            "web crawling",
+            "crawler",
+            "web scrape",
+            "scraping",
+            "scrapy",
+            "beautifulsoup",
+            "beautiful soup",
+            "bs4",
+            "selenium",
+            "playwright"
+          ],
+          "points": 3
+        },
+        {
+          "name": "LangChain & LLM Basics",
+          "keywords": [
+            "langchain",
+            "langgraph",
+            "lang graph",
+            "llamaindex",
+            "llama index",
+            "openai",
+            "llm",
+            "large language model",
+            "crewai"
+          ],
+          "points": 3
+        }
+      ]
+    },
+    "education": {
+      "max_score": 15,
+      "standalone_degrees": [
+        {
+          "name": "Master of Computer Applications (MCA)",
+          "keywords": ["mca", "m.c.a", "m.c.a.", "master of computer applications", "master in computer applications"]
+        },
+        {
+          "name": "Bachelor of Computer Applications (BCA)",
+          "keywords": ["bca", "b.c.a", "b.c.a.", "bachelor of computer applications"]
+        }
+      ],
+      "degree_levels": [
+        {
+          "name": "B.Tech / B.E.",
+          "keywords": ["b.tech", "btech", "b. tech", "bachelor of technology", "b.e", "b.e.", "be", "bachelor of engineering"]
+        },
+        {
+          "name": "B.Sc",
+          "keywords": ["b.sc", "bsc", "b.sc.", "b. sc", "bachelor of science"]
+        },
+        {
+          "name": "M.Sc",
+          "keywords": ["m.sc", "msc", "m.sc.", "m. sc", "master of science"]
+        },
+        {
+          "name": "M.Tech / M.E.",
+          "keywords": ["m.tech", "mtech", "m. tech", "master of technology", "m.e", "m.e.", "me", "master of engineering"]
+        }
+      ],
+      "qualifying_branches": [
+        "information technology",
+        "computer engineering",
+        "computer science and engineering",
+        "computer science & engineering",
+        "computer science",
+        "cse",
+        "it",
+        "ce",
+        "cs",
+        "ai and machine learning",
+        "ai & machine learning",
+        "artificial intelligence and machine learning",
+        "artificial intelligence",
+        "ai-ml",
+        "ai/ml",
+        "data science",
+        "cyber security",
+        "information security"
+      ]
+    },
+    "experience": {
+      "max_score": 5,
+      "max_allowed_gap_months": 3,
+      "gap_rules": [
+        {
+          "min_months": 0,
+          "max_months": 3,
+          "score": 5,
+          "status": "No Gap Detected (Continuous)"
+        },
+        {
+          "min_months": 3,
+          "max_months": 6,
+          "score": 3.5,
+          "status": "Minor Gap (3-6 Months)"
+        },
+        {
+          "min_months": 6,
+          "max_months": 12,
+          "score": 2,
+          "status": "Moderate Gap (6-12 Months)"
+        },
+        {
+          "min_months": 12,
+          "max_months": 999,
+          "score": 1,
+          "status": "Significant Gap (>1 Year)"
+        }
+      ]
+    },
+    "projects": {
+      "max_score": 5,
+      "relevant_keywords": [
+        "python", "fastapi", "django", "drf", "flask", "rest api", "backend",
+        "web scraping", "scraping", "crawler", "automation", "sqlalchemy", "orm",
+        "e-commerce", "postgresql", "mysql", "microservice"
+      ]
+    },
+    "certifications": {
+      "max_score": 2,
+      "reputed_issuers": [
+        "aws", "amazon web services", "azure", "google cloud", "gcp", "coursera",
+        "deeplearning.ai", "nvidia", "ibm", "meta", "udemy", "nptel", "kaggle",
+        "hackerrank", "leetcode", "oracle", "edx", "stanford", "microsoft",
+        "linkedin learning", "freecodecamp"
+      ],
+      "achievement_keywords": [
+        "hackathon", "winner", "runner up", "1st place", "2nd place", "second place",
+        "1st prize", "2nd prize", "top 1%", "top 5%", "top 10%", "finalist",
+        "research paper", "published paper", "ieee", "springer", "patent",
+        "scholarship", "olympiad", "rank", "codechef", "codeforces", "icpc"
+      ]
+    },
+    "location": {
+      "max_score": 3,
+      "tier_1": {
+        "name": "Surat (Local)",
+        "keywords": ["surat"],
+        "score": 3
+      },
+      "tier_2": {
+        "name": "Ahmedabad / Gandhinagar / Vadodara",
+        "keywords": ["ahmedabad", "gandhinagar", "vadodara", "baroda"],
+        "score": 2
+      }
+    }
+  },
+  "Full Stack Developer": {
+    "tech_stack": {
+      "max_score": 20,
+      "core_skills": [
+        {
+          "name": "React",
+          "keywords": ["react", "react.js", "reactjs"],
+          "points": 4
+        },
+        {
+          "name": "Next.js",
+          "keywords": ["next.js", "nextjs", "next js"],
+          "points": 3
+        },
+        {
+          "name": "Express.js",
+          "keywords": ["express", "express.js", "expressjs"],
+          "points": 4
+        },
+        {
+          "name": "Database (Any one: MongoDB / SQL / PostgreSQL / MySQL)",
+          "keywords": [
+            "mongodb",
+            "mongo",
+            "postgresql",
+            "postgres",
+            "mysql",
+            "sqlite",
+            "redis",
+            "sql",
+            "nosql",
+            "database",
+            "mariadb"
+          ],
+          "points": 4
+        }
+      ],
+      "good_to_have": [
+        {
+          "name": "Zustand (State Management)",
+          "keywords": ["zustand"],
+          "points": 3
+        },
+        {
+          "name": "Git & GitHub",
+          "keywords": ["git", "github", "gitlab", "bitbucket"],
+          "points": 2
+        }
+      ]
+    },
+    "education": {
+      "max_score": 15,
+      "standalone_degrees": [
+        {
+          "name": "Master of Computer Applications (MCA)",
+          "keywords": ["mca", "m.c.a", "m.c.a.", "master of computer applications", "master in computer applications"]
+        },
+        {
+          "name": "Bachelor of Computer Applications (BCA)",
+          "keywords": ["bca", "b.c.a", "b.c.a.", "bachelor of computer applications"]
+        }
+      ],
+      "degree_levels": [
+        {
+          "name": "B.Tech / B.E.",
+          "keywords": ["b.tech", "btech", "b. tech", "bachelor of technology", "b.e", "b.e.", "be", "bachelor of engineering"]
+        },
+        {
+          "name": "B.Sc",
+          "keywords": ["b.sc", "bsc", "b.sc.", "b. sc", "bachelor of science"]
+        },
+        {
+          "name": "M.Sc",
+          "keywords": ["m.sc", "msc", "m.sc.", "m. sc", "master of science"]
+        },
+        {
+          "name": "M.Tech / M.E.",
+          "keywords": ["m.tech", "mtech", "m. tech", "master of technology", "m.e", "m.e.", "me", "master of engineering"]
+        }
+      ],
+      "qualifying_branches": [
+        "information technology",
+        "computer engineering",
+        "computer science and engineering",
+        "computer science & engineering",
+        "computer science",
+        "cse",
+        "it",
+        "ce",
+        "cs",
+        "ai and machine learning",
+        "ai & machine learning",
+        "artificial intelligence and machine learning",
+        "artificial intelligence",
+        "ai-ml",
+        "ai/ml",
+        "data science",
+        "cyber security",
+        "information security"
+      ]
+    },
+    "experience": {
+      "max_score": 5,
+      "max_allowed_gap_months": 3,
+      "gap_rules": [
+        {
+          "min_months": 0,
+          "max_months": 3,
+          "score": 5,
+          "status": "No Gap Detected (Continuous)"
+        },
+        {
+          "min_months": 3,
+          "max_months": 6,
+          "score": 3.5,
+          "status": "Minor Gap (3-6 Months)"
+        },
+        {
+          "min_months": 6,
+          "max_months": 12,
+          "score": 2,
+          "status": "Moderate Gap (6-12 Months)"
+        },
+        {
+          "min_months": 12,
+          "max_months": 999,
+          "score": 1,
+          "status": "Significant Gap (>1 Year)"
+        }
+      ]
+    },
+    "projects": {
+      "max_score": 5,
+      "relevant_keywords": [
+        "react", "react.js", "next.js", "nextjs", "express", "express.js", "node.js",
+        "full stack", "mern", "frontend", "backend", "zustand", "redux", "mongodb",
+        "rest api", "crud", "web application", "e-commerce", "dashboard"
+      ]
+    },
+    "certifications": {
+      "max_score": 2,
+      "reputed_issuers": [
+        "aws", "amazon web services", "azure", "google cloud", "gcp", "coursera",
+        "deeplearning.ai", "nvidia", "ibm", "meta", "udemy", "nptel", "kaggle",
+        "hackerrank", "leetcode", "oracle", "edx", "stanford", "microsoft",
+        "linkedin learning", "freecodecamp"
+      ],
+      "achievement_keywords": [
+        "hackathon", "winner", "runner up", "1st place", "2nd place", "second place",
+        "1st prize", "2nd prize", "top 1%", "top 5%", "top 10%", "finalist",
+        "research paper", "published paper", "ieee", "springer", "patent",
+        "scholarship", "olympiad", "rank", "codechef", "codeforces", "icpc"
+      ]
+    },
+    "location": {
+      "max_score": 3,
+      "tier_1": {
+        "name": "Surat (Local)",
+        "keywords": ["surat"],
+        "score": 3
+      },
+      "tier_2": {
+        "name": "Ahmedabad / Gandhinagar / Vadodara",
+        "keywords": ["ahmedabad", "gandhinagar", "vadodara", "baroda"],
+        "score": 2
+      }
+    }
+  }
+}
