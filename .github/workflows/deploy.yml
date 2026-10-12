@@ -1,0 +1,20 @@
+name: Auto Deploy Python Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Update Code and Restart PM2
+        run: |
+          cd /home/arcbizz/Desktop/HRMS/Project/Python_Backend
+          git fetch origin main
+          git reset --hard origin/main
+          source venv/bin/activate
+          pip install -r requirements.txt
+          pm2 restart Python_Backend
