@@ -7,7 +7,8 @@ from services.resume_parser import parse_uploaded_resume_file
 app = FastAPI(
     title="HRMS AI Resume Screening API",
     description="Python Sidecar Service to fetch, evaluate and parse candidate resumes",
-    version="1.0.0"
+    version="1.0.0",
+    root_path="/api/ai"
 )
 
 # 1. Candidate Details API
