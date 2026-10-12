@@ -1,3 +1,5 @@
+# CI/CD Pipeline Active
+
 from fastapi import FastAPI, File, UploadFile
 from services.candidate_service import fetch_candidate_from_nodejs
 from services.extractor_service import get_candidate_and_extract_resume_data
