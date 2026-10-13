@@ -22,6 +22,8 @@
             "crew ai",
             "autogen"
           ],
+          "semantic_fallback": true,
+          "semantic_query": "LLM agent frameworks, AI workflows, prompt engineering, autonomous agents, OpenAI API integration, n8n automation pipeline",
           "points": 5
         },
         {
@@ -69,11 +71,27 @@
       "standalone_degrees": [
         {
           "name": "Master of Computer Applications (MCA)",
-          "keywords": ["mca", "m.c.a", "m.c.a.", "master of computer applications", "master in computer applications"]
+          "keywords": [
+            "mca",
+            "m.c.a",
+            "m.c.a.",
+            "master of computer applications",
+            "master of computer application",
+            "master in computer applications",
+            "master in computer application"
+          ]
         },
         {
           "name": "Bachelor of Computer Applications (BCA)",
-          "keywords": ["bca", "b.c.a", "b.c.a.", "bachelor of computer applications"]
+          "keywords": [
+            "bca",
+            "b.c.a",
+            "b.c.a.",
+            "bachelor of computer applications",
+            "bachelor of computer application",
+            "bachelor in computer applications",
+            "bachelor in computer application"
+          ]
         }
       ],
       "degree_levels": [
@@ -254,11 +272,27 @@
       "standalone_degrees": [
         {
           "name": "Master of Computer Applications (MCA)",
-          "keywords": ["mca", "m.c.a", "m.c.a.", "master of computer applications", "master in computer applications"]
+          "keywords": [
+            "mca",
+            "m.c.a",
+            "m.c.a.",
+            "master of computer applications",
+            "master of computer application",
+            "master in computer applications",
+            "master in computer application"
+          ]
         },
         {
           "name": "Bachelor of Computer Applications (BCA)",
-          "keywords": ["bca", "b.c.a", "b.c.a.", "bachelor of computer applications"]
+          "keywords": [
+            "bca",
+            "b.c.a",
+            "b.c.a.",
+            "bachelor of computer applications",
+            "bachelor of computer application",
+            "bachelor in computer applications",
+            "bachelor in computer application"
+          ]
         }
       ],
       "degree_levels": [
@@ -427,11 +461,27 @@
       "standalone_degrees": [
         {
           "name": "Master of Computer Applications (MCA)",
-          "keywords": ["mca", "m.c.a", "m.c.a.", "master of computer applications", "master in computer applications"]
+          "keywords": [
+            "mca",
+            "m.c.a",
+            "m.c.a.",
+            "master of computer applications",
+            "master of computer application",
+            "master in computer applications",
+            "master in computer application"
+          ]
         },
         {
           "name": "Bachelor of Computer Applications (BCA)",
-          "keywords": ["bca", "b.c.a", "b.c.a.", "bachelor of computer applications"]
+          "keywords": [
+            "bca",
+            "b.c.a",
+            "b.c.a.",
+            "bachelor of computer applications",
+            "bachelor of computer application",
+            "bachelor in computer applications",
+            "bachelor in computer application"
+          ]
         }
       ],
       "degree_levels": [

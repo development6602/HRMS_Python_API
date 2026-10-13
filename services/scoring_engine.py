@@ -9,6 +9,48 @@ CRITERIA_FILE_PATH = os.path.abspath(
     else os.path.join(os.path.dirname(__file__), "criteria", "roles_criteria.json")
 )
 
+# ------------------ Semantic Similarity Model (Lazy Loaded) ------------------
+_SEMANTIC_MODEL = None
+
+def get_semantic_model():
+    """Model ko sirf zaroorat padne par memory me load karega taaki startup slow na ho."""
+    global _SEMANTIC_MODEL
+    if _SEMANTIC_MODEL is None:
+        try:
+            from sentence_transformers import SentenceTransformer
+            # Lightweight 80MB model, runs super fast on CPU
+            _SEMANTIC_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+        except Exception as e:
+            print(f"[Warning] sentence-transformers load nahi hua: {e}")
+            _SEMANTIC_MODEL = False
+    return _SEMANTIC_MODEL if _SEMANTIC_MODEL is not False else None
+
+
+def check_semantic_fallback(query: str, text: str, threshold: float = 0.58) -> bool:
+    """Agar exact keyword na mile toh resume ke sentences ke saath meaning match karega."""
+    model = get_semantic_model()
+    if not model or not query:
+        return False
+    
+    from sentence_transformers import util
+    
+    # Resume ke meaningful lines extract karein (length > 20 chars)
+    candidate_lines = [line.strip() for line in text.splitlines() if len(line.strip()) > 20]
+    if not candidate_lines:
+        return False
+    
+    try:
+        query_vec = model.encode(query, convert_to_tensor=True)
+        doc_vecs = model.encode(candidate_lines, convert_to_tensor=True)
+        scores = util.cos_sim(query_vec, doc_vecs)
+        max_score = float(scores.max().item())
+        
+        # Agar match >= 58% hai toh semantic match true
+        return max_score >= threshold
+    except Exception as e:
+        print(f"[Error in semantic match]: {e}")
+        return False
+
 
 def load_criteria():
     """
@@ -41,13 +83,47 @@ def evaluate_tech_stack(text: str, role_tech_criteria: dict) -> dict:
     missing_skills = []
     skill_breakdown = []
 
+    # # 1. Core Skills Check
+    # for skill in role_tech_criteria.get("core_skills", []):
+    #     name = skill["name"]
+    #     keywords = skill["keywords"]
+    #     points = skill["points"]
+        
+    #     is_matched = check_keyword_in_text(text, keywords)
+    #     if is_matched:
+    #         total_tech_score += points
+    #         matched_skills.append(name)
+    #         skill_breakdown.append({
+    #             "skill": name,
+    #             "category": "Core Skill",
+    #             "status": "Matched",
+    #             "scoreEarned": points,
+    #             "maxPoints": points
+    #         })
+    #     else:
+    #         missing_skills.append(name)
+    #         skill_breakdown.append({
+    #             "skill": name,
+    #             "category": "Core Skill",
+    #             "status": "Not Matched",
+    #             "scoreEarned": 0,
+    #             "maxPoints": points
+    #         })
     # 1. Core Skills Check
     for skill in role_tech_criteria.get("core_skills", []):
         name = skill["name"]
         keywords = skill["keywords"]
         points = skill["points"]
         
+        # 1. Pehle normal regex match karega
         is_matched = check_keyword_in_text(text, keywords)
+
+        # 2. ✨ Agar match NAHI hua aur JSON me semantic_fallback: true hai, toh semantic AI check karega
+        if not is_matched and skill.get("semantic_fallback"):
+            semantic_query = skill.get("semantic_query", name)
+            is_matched = check_semantic_fallback(semantic_query, text)
+
+        # 3. Score assign karein
         if is_matched:
             total_tech_score += points
             matched_skills.append(name)
@@ -108,47 +184,155 @@ def evaluate_tech_stack(text: str, role_tech_criteria: dict) -> dict:
     }
 
 
+# def evaluate_education(text: str, role_edu_criteria: dict) -> dict:
+#     """
+#     Education qualification evaluate karta hai (Out of 15).
+#     Supports:
+#     1. Standalone Degrees (MCA, BCA)
+#     2. Degree + Branch Proximity (B.Tech in CSE)
+#     3. Technical Branch directly in Education section (e.g. SCET - Artificial Intelligence and Data Science)
+#     4. Standalone Engineering Degree (e.g. Bachelor of Technology / B.Tech from university)
+#     """
+#     max_score = role_edu_criteria.get("max_score", 15)
+#     matched_degree_info = None
+
+#     # Fix: LaTeX font kerning glitches normalize karein
+#     normalized_text = re.sub(r'\bB\s*\.\s*T\s+ech\b', 'B.Tech', text, flags=re.IGNORECASE)
+#     normalized_text = re.sub(r'\bM\s*\.\s*T\s+ech\b', 'M.Tech', normalized_text, flags=re.IGNORECASE)
+
+#     # Education Section extract karein (Focused Search ke liye)
+#     edu_section_match = re.search(
+#         r'(?:EDUCATION|ACADEMIC\s+QUALIFICATIONS?|ACADEMICS?)\s*[:\n\r]+'
+#         r'([\s\S]+?)'
+#         r'(?=(?:PROJECTS?|EXPERIENCE|WORK\s+EXPERIENCE|SKILLS|TECHNICAL\s+SKILLS|CERTIFICATIONS|ACHIEVEMENTS|LEADERSHIP|$))',
+#         normalized_text,
+#         re.IGNORECASE
+#     )
+#     edu_section_text = edu_section_match.group(1) if edu_section_match else normalized_text
+
+#     # -------------------------------------------------------------
+#     # Step 1: Standalone degrees check karein (MCA, BCA)
+#     # -------------------------------------------------------------
+#     for degree in role_edu_criteria.get("standalone_degrees", []):
+#         if check_keyword_in_text(normalized_text, degree["keywords"]):
+#             matched_degree_info = degree["name"]
+#             break
+
+#     # -------------------------------------------------------------
+#     # Step 2: Degree + Branch Proximity check karein (e.g. B.Tech in IT)
+#     # -------------------------------------------------------------
+#     if not matched_degree_info:
+#         degree_levels = role_edu_criteria.get("degree_levels", [])
+#         qualifying_branches = role_edu_criteria.get("qualifying_branches", [])
+
+#         for deg in degree_levels:
+#             for deg_kw in deg["keywords"]:
+#                 for branch in qualifying_branches:
+#                     pat1 = r"(?<!\w)" + re.escape(deg_kw) + r"(?!\w)[\s\S]{0,60}?(?<!\w)" + re.escape(branch) + r"(?!\w)"
+#                     pat2 = r"(?<!\w)" + re.escape(branch) + r"(?!\w)[\s\S]{0,60}?(?<!\w)" + re.escape(deg_kw) + r"(?!\w)"
+
+#                     if re.search(pat1, normalized_text, re.IGNORECASE) or re.search(pat2, normalized_text, re.IGNORECASE):
+#                         matched_degree_info = f"{deg['name']} in {branch.title()}"
+#                         break
+#                 if matched_degree_info:
+#                     break
+#             if matched_degree_info:
+#                 break
+
+#     # -------------------------------------------------------------
+#     # Step 3: Direct Technical Branch in Education Section (Kunj Desai Case)
+#     # -------------------------------------------------------------
+#     if not matched_degree_info:
+#         qualifying_branches = role_edu_criteria.get("qualifying_branches", [])
+#         for branch in qualifying_branches:
+#             branch_pat = r"(?<!\w)" + re.escape(branch) + r"(?!\w)"
+#             if re.search(branch_pat, edu_section_text, re.IGNORECASE):
+#                 matched_degree_info = f"Degree in {branch.title()}"
+#                 break
+
+#     # -------------------------------------------------------------
+#     # Step 4: Standalone Engineering Degree check (Reshma Sri Case)
+#     # -------------------------------------------------------------
+#     if not matched_degree_info:
+#         engg_patterns = [
+#             r'\bb\.?\s*tech\b', r'\bbtech\b', r'\bbachelor\s+of\s+technology\b',
+#             r'\bb\.?\s*e\.?\b', r'\bbachelor\s+of\s+engineering\b',
+#             r'\bm\.?\s*tech\b', r'\bmtech\b', r'\bmaster\s+of\s+technology\b'
+#         ]
+#         for pat in engg_patterns:
+#             if re.search(pat, edu_section_text, re.IGNORECASE):
+#                 matched_degree_info = "Bachelor of Technology / Engineering (Technical Degree)"
+#                 break
+
+#     # -------------------------------------------------------------
+#     # Final Result
+#     # -------------------------------------------------------------
+#     if matched_degree_info:
+#         return {
+#             "score": max_score,
+#             "maxScore": max_score,
+#             "status": "Matched",
+#             "matchedDegree": matched_degree_info,
+#             "note": "Candidate holds a qualifying technical degree."
+#         }
+#     else:
+#         return {
+#             "score": 0,
+#             "maxScore": max_score,
+#             "status": "Not Matched",
+#             "matchedDegree": None,
+#             "note": "No matching qualifying degree/branch found in resume."
+#         }
 def evaluate_education(text: str, role_edu_criteria: dict) -> dict:
     """
-    Education qualification evaluate karta hai (Out of 15).
-    Supports:
+    Education evaluate karta hai (Out of 15).
+    Multi-level evaluation:
     1. Standalone Degrees (MCA, BCA)
-    2. Degree + Branch Proximity (B.Tech in CSE)
+    2. Degree + Qualifying Branch Proximity (e.g. B.Tech in CSE / IT / AI-DS)
     3. Technical Branch directly in Education section (e.g. SCET - Artificial Intelligence and Data Science)
-    4. Standalone Engineering Degree (e.g. Bachelor of Technology / B.Tech from university)
+    4. Standalone Engineering Degree (Reshma Sri case - jahan branch mention na ho)
+    🚫 Non-Qualifying Streams Guard (ECE, Mechanical, Civil, Electrical ko block karta hai)
     """
+    # 🚫 Non-Qualifying Engineering Streams jo Software/AI-ML me eligible nahi hain:
+    NON_QUALIFYING_STREAMS = [
+        "electronics and communication", "electronics & communication", "electronics", "ece",
+        "electrical and electronics", "electrical & electronics", "electrical", "eee",
+        "mechanical", "mech", "civil", "chemical", "automobile", "automotive",
+        "aerospace", "aeronautical", "biotechnology", "biomedical", "metallurgy",
+        "mining", "production", "instrumentation", "petroleum"
+    ]
+
     max_score = role_edu_criteria.get("max_score", 15)
     matched_degree_info = None
 
-    # Fix: LaTeX font kerning glitches normalize karein
+    # ✨ Normalizations: LaTeX kerning aur BCA/MCA singular/plural
     normalized_text = re.sub(r'\bB\s*\.\s*T\s+ech\b', 'B.Tech', text, flags=re.IGNORECASE)
     normalized_text = re.sub(r'\bM\s*\.\s*T\s+ech\b', 'M.Tech', normalized_text, flags=re.IGNORECASE)
+    normalized_text = re.sub(r'\bbachelor\s+(?:of|in)\s+computer\s+applications?\b', 'BCA', normalized_text, flags=re.IGNORECASE)
+    normalized_text = re.sub(r'\bmaster\s+(?:of|in)\s+computer\s+applications?\b', 'MCA', normalized_text, flags=re.IGNORECASE)
 
     # Education Section extract karein (Focused Search ke liye)
     edu_section_match = re.search(
         r'(?:EDUCATION|ACADEMIC\s+QUALIFICATIONS?|ACADEMICS?)\s*[:\n\r]+'
         r'([\s\S]+?)'
-        r'(?=(?:PROJECTS?|EXPERIENCE|WORK\s+EXPERIENCE|SKILLS|TECHNICAL\s+SKILLS|CERTIFICATIONS|ACHIEVEMENTS|LEADERSHIP|$))',
+        r'(?=(?:WORK\s+EXPERIENCE|PROFESSIONAL\s+EXPERIENCE|EMPLOYMENT\s+HISTORY|INTERNSHIPS?|'
+        r'EXPERIENCE|PROJECTS|TECHNICAL\s+SKILLS|SKILLS|CERTIFICATIONS|ACHIEVEMENTS|AWARDS|LANGUAGES|DECLARATION|$))',
         normalized_text,
         re.IGNORECASE
     )
-    edu_section_text = edu_section_match.group(1) if edu_section_match else normalized_text
+    edu_text = edu_section_match.group(1).strip() if edu_section_match else normalized_text
 
-    # -------------------------------------------------------------
     # Step 1: Standalone degrees check karein (MCA, BCA)
-    # -------------------------------------------------------------
     for degree in role_edu_criteria.get("standalone_degrees", []):
         if check_keyword_in_text(normalized_text, degree["keywords"]):
             matched_degree_info = degree["name"]
             break
 
-    # -------------------------------------------------------------
-    # Step 2: Degree + Branch Proximity check karein (e.g. B.Tech in IT)
-    # -------------------------------------------------------------
-    if not matched_degree_info:
-        degree_levels = role_edu_criteria.get("degree_levels", [])
-        qualifying_branches = role_edu_criteria.get("qualifying_branches", [])
+    degree_levels = role_edu_criteria.get("degree_levels", [])
+    qualifying_branches = role_edu_criteria.get("qualifying_branches", [])
 
+    # Step 2: Degree + Qualifying Branch Proximity check karein
+    if not matched_degree_info:
         for deg in degree_levels:
             for deg_kw in deg["keywords"]:
                 for branch in qualifying_branches:
@@ -163,34 +347,39 @@ def evaluate_education(text: str, role_edu_criteria: dict) -> dict:
             if matched_degree_info:
                 break
 
-    # -------------------------------------------------------------
-    # Step 3: Direct Technical Branch in Education Section (Kunj Desai Case)
-    # -------------------------------------------------------------
+    # Step 3: Technical Branch directly in Education section (Kunj Desai Case)
     if not matched_degree_info:
-        qualifying_branches = role_edu_criteria.get("qualifying_branches", [])
         for branch in qualifying_branches:
-            branch_pat = r"(?<!\w)" + re.escape(branch) + r"(?!\w)"
-            if re.search(branch_pat, edu_section_text, re.IGNORECASE):
-                matched_degree_info = f"Degree in {branch.title()}"
+            if re.search(r"(?<!\w)" + re.escape(branch) + r"(?!\w)", edu_text, re.IGNORECASE):
+                matched_degree_info = f"Bachelor of Technology in {branch.title()} (Technical Branch)"
                 break
 
-    # -------------------------------------------------------------
-    # Step 4: Standalone Engineering Degree check (Reshma Sri Case)
-    # -------------------------------------------------------------
-    if not matched_degree_info:
-        engg_patterns = [
-            r'\bb\.?\s*tech\b', r'\bbtech\b', r'\bbachelor\s+of\s+technology\b',
-            r'\bb\.?\s*e\.?\b', r'\bbachelor\s+of\s+engineering\b',
-            r'\bm\.?\s*tech\b', r'\bmtech\b', r'\bmaster\s+of\s+technology\b'
-        ]
-        for pat in engg_patterns:
-            if re.search(pat, edu_section_text, re.IGNORECASE):
-                matched_degree_info = "Bachelor of Technology / Engineering (Technical Degree)"
+    # 🔍 Guard: Check karein kya degree kisi Non-Qualifying stream (ECE, Mech, Civil) me hai?
+    is_non_qualifying_branch = False
+    for deg in degree_levels:
+        for deg_kw in deg["keywords"]:
+            for stream in NON_QUALIFYING_STREAMS:
+                pat1 = r"(?<!\w)" + re.escape(deg_kw) + r"(?!\w)[\s\S]{0,60}?(?<!\w)" + re.escape(stream) + r"(?!\w)"
+                pat2 = r"(?<!\w)" + re.escape(stream) + r"(?!\w)[\s\S]{0,60}?(?<!\w)" + re.escape(deg_kw) + r"(?!\w)"
+                if re.search(pat1, normalized_text, re.IGNORECASE) or re.search(pat2, normalized_text, re.IGNORECASE):
+                    is_non_qualifying_branch = True
+                    break
+            if is_non_qualifying_branch:
+                break
+        if is_non_qualifying_branch:
+            break
+
+    # Step 4: Standalone Engineering Degree (SIRF tab chalega jab Non-Qualifying branch NA ho)
+    if not matched_degree_info and not is_non_qualifying_branch:
+        for deg in degree_levels:
+            for deg_kw in deg["keywords"]:
+                if re.search(r"(?<!\w)" + re.escape(deg_kw) + r"(?!\w)", edu_text, re.IGNORECASE):
+                    matched_degree_info = f"{deg['name']} (Technical Degree)"
+                    break
+            if matched_degree_info:
                 break
 
-    # -------------------------------------------------------------
-    # Final Result
-    # -------------------------------------------------------------
+    # Return Final Result
     if matched_degree_info:
         return {
             "score": max_score,
@@ -207,6 +396,7 @@ def evaluate_education(text: str, role_edu_criteria: dict) -> dict:
             "matchedDegree": None,
             "note": "No matching qualifying degree/branch found in resume."
         }
+
 
 # ==========================================
 # 🕒 CAREER GAP & EXPERIENCE EVALUATOR
@@ -525,6 +715,7 @@ def evaluate_certifications_and_achievements(text: str, role_cert_criteria: dict
     # 1. Certifications & Achievements ke saare sections extract karein
     section_pattern = (
         r'(?:CERTIFICATIONS?|CERTIFICATES?|LICENSES?\s*(?:&|AND)?\s*CERTIFICATIONS?|'
+        r'CERTIFICATIONS?\s*(?:&|AND)?\s*(?:CORE\s+COMPETENCIES|COMPETENCIES|SKILLS)|'
         r'CERTIFICATION\s+COURSES?|ONLINE\s+COURSES?|TRAININGS?\s*(?:&|AND)?\s*CERTIFICATIONS?|'
         r'ACHIEVEMENTS?|KEY\s+ACHIEVEMENTS?|HONORS?\s*(?:&|AND)?\s*AWARDS?|'
         r'AWARDS?\s*(?:&|AND)?\s*(?:RECOGNITIONS?|ACHIEVEMENTS?|CERTIFICATES?)|'
