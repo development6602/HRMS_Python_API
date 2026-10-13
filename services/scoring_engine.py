@@ -2,6 +2,8 @@ import json
 import re
 import os
 from datetime import datetime
+from sentence_transformers import SentenceTransformer
+from sentence_transformers import util
 
 CRITERIA_FILE_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "criteria", "roles_criteria.json")
@@ -17,7 +19,6 @@ def get_semantic_model():
     global _SEMANTIC_MODEL
     if _SEMANTIC_MODEL is None:
         try:
-            from sentence_transformers import SentenceTransformer
             # Lightweight 80MB model, runs super fast on CPU
             _SEMANTIC_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
         except Exception as e:
@@ -31,8 +32,6 @@ def check_semantic_fallback(query: str, text: str, threshold: float = 0.58) -> b
     model = get_semantic_model()
     if not model or not query:
         return False
-    
-    from sentence_transformers import util
     
     # Resume ke meaningful lines extract karein (length > 20 chars)
     candidate_lines = [line.strip() for line in text.splitlines() if len(line.strip()) > 20]
