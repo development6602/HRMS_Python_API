@@ -1,4 +1,5 @@
 import io
+import os
 import requests
 from fastapi import HTTPException
 from pypdf import PdfReader
@@ -49,10 +50,45 @@ def extract_text_from_docx_bytes(content: bytes) -> dict:
     }
 
 
+# def extract_text_from_resume_url(resume_url: str, file_name: str = "") -> dict:
+#     """Smart Extractor: PDF aur DOCX dono ko detect karta hai."""
+#     try:
+#         download_response = requests.get(resume_url, timeout=15)
+#         if download_response.status_code != 200:
+#             raise HTTPException(
+#                 status_code=400,
+#                 detail=f"Could not download resume from URL (Status: {download_response.status_code})"
+#             )
+            
+#         content = download_response.content
+#         lower_name = (file_name or "").lower()
 def extract_text_from_resume_url(resume_url: str, file_name: str = "") -> dict:
-    """Smart Extractor: PDF aur DOCX dono ko detect karta hai."""
+    """
+    Smart Extractor: PDF aur DOCX dono ko automatically detect karke text nikalta hai.
+    - 'website_form' (Cloudinary https://): Direct download karega (As-it-is).
+    - 'admin_panel' (Local /api/files/...): Server Origin + JWT Token add karke Node.js se download karega.
+    """
     try:
-        download_response = requests.get(resume_url, timeout=15)
+        download_url = resume_url
+        headers = {}
+
+        # 🌐 Case 2: Agar Admin Panel se upload hua local resume hai (Relative path starts with '/')
+        if resume_url.startswith("/"):
+            from urllib.parse import urlparse
+            hrms_base = os.getenv("HRMS_BASE_URL", "http://localhost:5000/api")
+            hrms_token = os.getenv("HRMS_AUTH_TOKEN", "")
+            
+            # Base URL se origin domain extract karein (e.g. http://localhost:5000 ya http://192.168.1.206)
+            parsed_base = urlparse(hrms_base)
+            server_origin = f"{parsed_base.scheme}://{parsed_base.netloc}"
+            download_url = f"{server_origin}{resume_url}"
+            
+            # Node.js backend ko access karne ke liye JWT Auth Token add karein
+            if hrms_token:
+                headers["Authorization"] = f"Bearer {hrms_token}"
+
+        # 🚀 Resume download karein (Cloudinary ke liye direct, Admin panel ke liye with token)
+        download_response = requests.get(download_url, headers=headers, timeout=15)
         if download_response.status_code != 200:
             raise HTTPException(
                 status_code=400,
@@ -61,6 +97,7 @@ def extract_text_from_resume_url(resume_url: str, file_name: str = "") -> dict:
             
         content = download_response.content
         lower_name = (file_name or "").lower()
+
         
         if content.startswith(b'%PDF') or lower_name.endswith('.pdf'):
             return extract_text_from_pdf_bytes(content)
