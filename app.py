@@ -2,9 +2,12 @@
 
 from fastapi import FastAPI, File, UploadFile
 from services.candidate_service import fetch_candidate_from_nodejs
-from services.extractor_service import get_candidate_and_extract_resume_data
+from services.extractor_service import get_candidate_and_extract_resume_data, extract_text_from_resume_url
 from services.scoring_engine import evaluate_candidate_resume
 from services.resume_parser import parse_uploaded_resume_file
+from fastapi import FastAPI, HTTPException, status, File, UploadFile, Body
+from typing import Dict, Any
+
 
 app = FastAPI(
     title="HRMS AI Resume Screening API",
@@ -61,6 +64,77 @@ async def parse_resume(file: UploadFile = File(...)):
     """Uploads PDF, DOC, and DOCX files and parses Name, Email, Phone, Role, and Experience."""
     content = await file.read()
     return parse_uploaded_resume_file(content, file.filename)
+
+# ==============================================================================
+# ✨ NEW API: Direct JSON Payload Candidate Evaluation (Stage 1 Bypassed)
+# ==============================================================================
+@app.post("/candidate/evaluate")
+def evaluate_candidate_from_payload(payload: Dict[str, Any] = Body(
+    ...,
+    example={
+        "applicationId": "ADM_1791881211963_JRAARX",
+        "name": "Abhay Khorasiya",
+        "position": "AI-ML Engineer",
+        "experience": "Fresher",
+        "resume": {
+            "fileName": "demo 123.pdf",
+            "fileUrl": "/api/files/6acdeffb1216c4c41cea4ac7"
+        }
+    }
+)):
+    """
+    Direct Candidate Evaluation API:
+    - Evaluates candidates directly using a JSON payload without calling the Node.js backend.
+    - Supports both Cloudinary URLs (https://) and Local Storage URLs (/api/files/...).
+    """
+    # 1. Unpack candidate data (chahe direct ho ya {"data": {...}} me wrapped ho)
+    candidate_data = payload.get("data") if "data" in payload and isinstance(payload.get("data"), dict) else payload
+    
+    position = candidate_data.get("position") or "AI-ML Engineer"
+    candidate_exp = candidate_data.get("experience") or ""
+    app_id = candidate_data.get("applicationId") or candidate_data.get("_id") or "DIRECT_EVAL"
+    candidate_name = candidate_data.get("name") or candidate_data.get("candidateName") or "Candidate"
+    
+    # 2. Resume URL / Text nikaalein
+    resume_text = candidate_data.get("resumeText") or candidate_data.get("rawExtractedText") or ""
+    
+    # Agar direct resumeText nahi diya hai, toh fileUrl se extract karein (Stage 2)
+    if not resume_text:
+        resume_info = candidate_data.get("resume") or {}
+        resume_url = resume_info.get("resumeDisplayUrl") or resume_info.get("fileUrl") or candidate_data.get("fileUrl")
+        file_name = resume_info.get("fileName") or "resume.pdf"
+        
+        if not resume_url:
+            raise HTTPException(
+                status_code=400,
+                detail="Payload me 'resume.fileUrl' ya 'resumeText' provide karna zaroori hai."
+            )
+        
+        # 🚀 Stage 2: Resume text extract karein
+        extracted_data = extract_text_from_resume_url(resume_url, file_name)
+        resume_text = extracted_data.get("fullText", "")
+    
+    if not resume_text.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="Resume se readable text extract nahi ho paya."
+        )
+
+    # 3. 🎯 Stage 3 & 4: Scoring Engine Run karein (50 Marks)
+    evaluation_result = evaluate_candidate_resume(position, resume_text, candidate_exp)
+    
+    # 4. Standard Response Return karein
+    return {
+        "success": True,
+        "applicationId": app_id,
+        "candidateName": candidate_name,
+        "appliedPosition": position,
+        "matchedRoleCriteria": evaluation_result["matchedRole"],
+        "totalScore": evaluation_result["totalScore"],
+        "maxTotalScore": evaluation_result["maxTotalScore"],
+        "breakdown": evaluation_result["breakdown"],
+        "message": evaluation_result["message"]
+    }
 
 
 if __name__ == "__main__":
