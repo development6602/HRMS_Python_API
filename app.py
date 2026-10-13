@@ -69,19 +69,7 @@ async def parse_resume(file: UploadFile = File(...)):
 # ✨ NEW API: Direct JSON Payload Candidate Evaluation (Stage 1 Bypassed)
 # ==============================================================================
 @app.post("/candidate/evaluate")
-def evaluate_candidate_from_payload(payload: Dict[str, Any] = Body(
-    ...,
-    example={
-        "applicationId": "ADM_1791881211963_JRAARX",
-        "name": "Abhay Khorasiya",
-        "position": "AI-ML Engineer",
-        "experience": "Fresher",
-        "resume": {
-            "fileName": "demo 123.pdf",
-            "fileUrl": "/api/files/6acdeffb1216c4c41cea4ac7"
-        }
-    }
-)):
+def evaluate_candidate_from_payload(payload: Dict[str, Any] = Body(...)):
     """
     Direct Candidate Evaluation API:
     - Evaluates candidates directly using a JSON payload without calling the Node.js backend.

@@ -114,25 +114,97 @@ def parse_candidate_position(text: str) -> str:
             return r
     return ""
 
+# def parse_candidate_experience(text: str) -> str:
+#     exp_match = re.search(
+#         r'(?:WORK\s+EXPERIENCE|PROFESSIONAL\s+EXPERIENCE|EMPLOYMENT\s+HISTORY|INTERNSHIPS?|EXPERIENCE)\s*[:\n\r]+'
+#         r'([\s\S]+?)'
+#         r'(?=(?:PROJECTS?|PROJECT\s+DETAILS|ACADEMIC\s+QUALIFICATIONS|EDUCATION|TECHNICAL\s+SKILLS|SKILLS|CERTIFICATIONS|ACHIEVEMENTS|AWARDS|LANGUAGES|DECLARATION|$))',
+#         text, re.I
+#     )
+#     if exp_match:
+#         ranges = re.findall(
+#             r'((?:(?:\d{1,2}[\/\-])?(?:[a-zA-Z]+(?:-[a-zA-Z]+)?\s*)?\d{4}|present|current|continuing))\s*[-–to~]+\s*'
+#             r'((?:(?:\d{1,2}[\/\-])?(?:[a-zA-Z]+(?:-[a-zA-Z]+)?\s*)?\d{4}|present|current|continuing))',
+#             exp_match.group(1), re.I
+#         )
+#         intervals = []
+#         for s_str, e_str in ranges:
+#             s_idx = parse_date_to_month_index(s_str)
+#             e_idx = parse_date_to_month_index(e_str)
+#             if s_idx > 0 and e_idx >= s_idx and (e_idx - s_idx) <= 180:
+#                 intervals.append((s_idx, max(s_idx + 1, e_idx)))
+#         if intervals:
+#             intervals.sort(key=lambda x: x[0])
+#             merged = []
+#             for s, e in intervals:
+#                 if not merged or s > merged[-1][1]:
+#                     merged.append([s, e])
+#                 else:
+#                     merged[-1][1] = max(merged[-1][1], e)
+#             total = sum(e - s for s, e in merged)
+#             if total >= 12:
+#                 y = round(total / 12, 1)
+#                 return f"{int(y) if y.is_integer() else y} Years"
+#             elif total > 0:
+#                 return f"{total} Months"
+
+#     lower = text.lower()
+#     tenure = re.search(r'(\d+(?:\.\d+)?)\+?\s*(?:years?|yrs?)', text, re.I)
+#     if tenure: return f"{tenure.group(1)} Years"
+#     months = re.search(r'(\d+)\+?\s*(?:months?|mos?)', text, re.I)
+#     if months:
+#         m = int(months.group(1))
+#         return f"{round(m / 12, 1)} Years" if m >= 12 else f"{m} Months"
+#     if "fresher" in lower or "entry level" in lower: return "Fresher"
+#     years = [int(y) for y in re.findall(r'\b(20[12]\d)\b', text)]
+#     if years and max(years) >= datetime.now().year: return "Fresher"
+#     return "Fresher"
 def parse_candidate_experience(text: str) -> str:
-    exp_match = re.search(
+    """
+    Tier 1: WORK EXPERIENCE / INTERNSHIPS section se exact date duration calculate karta hai.
+            (Interval Merging ke saath taaki parallel projects double-count na hon).
+    Tier 2 (Fallback): Text-based "X years experience" ya "Fresher" check karta hai.
+    """
+    # ========================================================
+    # TIER 1: EXPERIENCE SECTION DATES CALCULATION
+    # ========================================================
+    # ✨ Fix 1: Chipke huye month words ko alag karein (e.g. TechnologiesJan -> Technologies Jan)
+    normalized_text = re.sub(
+        r'([a-zA-Z])(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b',
+        r'\1 \2',
+        text,
+        flags=re.IGNORECASE
+    )
+
+    # ✨ Fix 2: Lookahead ko sirf nayi line (\n\s*) wale section headers par match karein
+    # (Taaki "within project timelines" jaisa sentence beech me section ko cut na kare)
+    exp_section_match = re.search(
         r'(?:WORK\s+EXPERIENCE|PROFESSIONAL\s+EXPERIENCE|EMPLOYMENT\s+HISTORY|INTERNSHIPS?|EXPERIENCE)\s*[:\n\r]+'
         r'([\s\S]+?)'
-        r'(?=(?:PROJECTS?|PROJECT\s+DETAILS|ACADEMIC\s+QUALIFICATIONS|EDUCATION|TECHNICAL\s+SKILLS|SKILLS|CERTIFICATIONS|ACHIEVEMENTS|AWARDS|LANGUAGES|DECLARATION|$))',
-        text, re.I
+        r'(?=\n\s*(?:PROJECTS?|PROJECT\s+DETAILS|ACADEMIC\s+QUALIFICATIONS|EDUCATION|TECHNICAL\s+SKILLS|SKILLS|CERTIFICATIONS|ACHIEVEMENTS|AWARDS|LANGUAGES|DECLARATION)\s*[:\n\r]|$)',
+        normalized_text,
+        re.IGNORECASE
     )
-    if exp_match:
-        ranges = re.findall(
-            r'((?:(?:\d{1,2}[\/\-])?(?:[a-zA-Z]+(?:-[a-zA-Z]+)?\s*)?\d{4}|present|current|continuing))\s*[-–to~]+\s*'
-            r'((?:(?:\d{1,2}[\/\-])?(?:[a-zA-Z]+(?:-[a-zA-Z]+)?\s*)?\d{4}|present|current|continuing))',
-            exp_match.group(1), re.I
-        )
+
+    if exp_section_match:
+        exp_text = exp_section_match.group(1)
+        token_rx = r'(?:(?:\d{1,2}[\/\-])?(?:[a-zA-Z]+(?:-[a-zA-Z]+)?\s*)?\d{4}|present|current|continuing|continue)'
+        # Dash, En-dash, Em-dash (- – —) sabhi support karein
+        date_range_pattern = rf'({token_rx})\s*[-–—to~]+\s*({token_rx})'
+        ranges = re.findall(date_range_pattern, exp_text, re.IGNORECASE)
+
         intervals = []
-        for s_str, e_str in ranges:
-            s_idx = parse_date_to_month_index(s_str)
-            e_idx = parse_date_to_month_index(e_str)
-            if s_idx > 0 and e_idx >= s_idx and (e_idx - s_idx) <= 180:
-                intervals.append((s_idx, max(s_idx + 1, e_idx)))
+        for start_str, end_str in ranges:
+            start_idx = parse_date_to_month_index(start_str)
+            end_idx = parse_date_to_month_index(end_str)
+            
+            if start_idx > 0 and end_idx >= start_idx:
+                duration = end_idx - start_idx
+                if 0 <= duration <= 180:
+                    # Interval store karein (start_month, end_month)
+                    intervals.append((start_idx, max(start_idx + 1, end_idx)))
+
+        # ✨ Overlapping Date Intervals ko Merge karein
         if intervals:
             intervals.sort(key=lambda x: x[0])
             merged = []
@@ -141,23 +213,49 @@ def parse_candidate_experience(text: str) -> str:
                     merged.append([s, e])
                 else:
                     merged[-1][1] = max(merged[-1][1], e)
-            total = sum(e - s for s, e in merged)
-            if total >= 12:
-                y = round(total / 12, 1)
-                return f"{int(y) if y.is_integer() else y} Years"
-            elif total > 0:
-                return f"{total} Months"
 
-    lower = text.lower()
-    tenure = re.search(r'(\d+(?:\.\d+)?)\+?\s*(?:years?|yrs?)', text, re.I)
-    if tenure: return f"{tenure.group(1)} Years"
-    months = re.search(r'(\d+)\+?\s*(?:months?|mos?)', text, re.I)
-    if months:
-        m = int(months.group(1))
-        return f"{round(m / 12, 1)} Years" if m >= 12 else f"{m} Months"
-    if "fresher" in lower or "entry level" in lower: return "Fresher"
-    years = [int(y) for y in re.findall(r'\b(20[12]\d)\b', text)]
-    if years and max(years) >= datetime.now().year: return "Fresher"
+            # Merged continuous working months ka sum
+            total_months = sum(e - s for s, e in merged)
+
+            if total_months >= 12:
+                years = round(total_months / 12, 1)
+                return f"{int(years) if years.is_integer() else years} Years"
+            elif total_months > 0:
+                return f"{total_months} Months"
+
+    # ========================================================
+    # TIER 2: FALLBACK (AGAR DATES NA MILEIN TO PURANA LOGIC)
+    # ========================================================
+    lower_text = text.lower()
+
+    # 1. Direct explicit tenure mention (e.g. "2.5 years of experience")
+    tenure_match = re.search(
+        r'(\d+(?:\.\d+)?)\+?\s*(?:years?|yrs?)(?:\s*(?:of)?\s*experience)?',
+        text,
+        re.IGNORECASE
+    )
+    if tenure_match:
+        return f"{tenure_match.group(1)} Years"
+
+    # 2. Months mention (e.g. "6 months experience")
+    month_match = re.search(
+        r'(\d+)\+?\s*(?:months?|mos?)(?:\s*(?:of)?\s*experience)?',
+        text,
+        re.IGNORECASE
+    )
+    if month_match:
+        m_val = int(month_match.group(1))
+        return f"{round(m_val / 12, 1)} Years" if m_val >= 12 else f"{m_val} Months"
+
+    # 3. Direct Fresher keywords
+    if "fresher" in lower_text or "entry level" in lower_text or "recent graduate" in lower_text:
+        return "Fresher"
+
+    # 4. College pursuing student check
+    year_matches = [int(y) for y in re.findall(r'\b(20[12]\d)\b', text)]
+    if year_matches and max(year_matches) >= datetime.now().year:
+        return "Fresher"
+
     return "Fresher"
 
 def parse_uploaded_resume_file(content: bytes, filename: str) -> dict:
