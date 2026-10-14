@@ -23,7 +23,7 @@
             "autogen"
           ],
           "semantic_fallback": true,
-          "semantic_query": "LLM agent frameworks, AI workflows, prompt engineering, autonomous agents, OpenAI API integration, n8n automation pipeline",
+          "semantic_query": "LLM agent frameworks, AI agent workflows, autonomous agent orchestrator, multi-agent systems, prompt engineering workflows",
           "points": 5
         },
         {

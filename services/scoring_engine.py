@@ -27,29 +27,64 @@ def get_semantic_model():
     return _SEMANTIC_MODEL if _SEMANTIC_MODEL is not False else None
 
 
-def check_semantic_fallback(query: str, text: str, threshold: float = 0.58) -> bool:
-    """Agar exact keyword na mile toh resume ke sentences ke saath meaning match karega."""
+# def check_semantic_fallback(query: str, text: str, threshold: float = 0.58) -> bool:
+#     """Agar exact keyword na mile toh resume ke sentences ke saath meaning match karega."""
+#     model = get_semantic_model()
+#     if not model or not query:
+#         return False
+    
+#     # Resume ke meaningful lines extract karein (length > 20 chars)
+#     candidate_lines = [line.strip() for line in text.splitlines() if len(line.strip()) > 20]
+#     if not candidate_lines:
+#         return False
+    
+#     try:
+#         query_vec = model.encode(query, convert_to_tensor=True)
+#         doc_vecs = model.encode(candidate_lines, convert_to_tensor=True)
+#         scores = util.cos_sim(query_vec, doc_vecs)
+#         max_score = float(scores.max().item())
+        
+#         # Agar match >= 58% hai toh semantic match true
+#         return max_score >= threshold
+#     except Exception as e:
+#         print(f"[Error in semantic match]: {e}")
+#         return False
+def check_semantic_fallback(query: str, text: str, threshold: float = 0.50) -> bool:
+    """
+    Pure Semantic Matcher: Exact keyword na milne par candidate ke 
+    meaningful context aur workflows ko AI ke zariye match karta hai.
+    """
     model = get_semantic_model()
     if not model or not query:
         return False
     
-    # Resume ke meaningful lines extract karein (length > 20 chars)
-    candidate_lines = [line.strip() for line in text.splitlines() if len(line.strip()) > 20]
-    if not candidate_lines:
+    # 1. Raw lines nikal kar PDF ke wrapped lines ko ek saath group/clean karein
+    raw_lines = [l.strip() for l in text.splitlines() if l.strip()]
+    candidate_chunks = []
+    
+    # Single lines (length > 20)
+    candidate_chunks.extend([l for l in raw_lines if len(l) > 20])
+    
+    # 2-line sliding window (taaki PDF me wrap hue multi-line bullets context na khoyen)
+    for i in range(len(raw_lines) - 1):
+        combined = f"{raw_lines[i]} {raw_lines[i+1]}"
+        if len(combined) > 40:
+            candidate_chunks.append(combined)
+
+    if not candidate_chunks:
         return False
     
     try:
         query_vec = model.encode(query, convert_to_tensor=True)
-        doc_vecs = model.encode(candidate_lines, convert_to_tensor=True)
+        doc_vecs = model.encode(candidate_chunks, convert_to_tensor=True)
         scores = util.cos_sim(query_vec, doc_vecs)
         max_score = float(scores.max().item())
         
-        # Agar match >= 58% hai toh semantic match true
+        # 50% ya usse zyada context match hone par True
         return max_score >= threshold
     except Exception as e:
         print(f"[Error in semantic match]: {e}")
         return False
-
 
 def load_criteria():
     """
@@ -610,9 +645,9 @@ def evaluate_projects(text: str, role_projects_criteria: dict, is_fresher: bool 
     max_score = role_projects_criteria.get("max_score", 5)
     relevant_keywords = role_projects_criteria.get("relevant_keywords", [])
 
-    # 1. Projects Section isolate karein
+    # 1. Projects Section isolate karein (PROJECT EXPERIENCE, PROJECTS, RELEVANT PROJECTS etc.)
     proj_match = re.search(
-        r'(?:PROJECTS|PERSONAL\s+PROJECTS|KEY\s+PROJECTS|ACADEMIC\s+PROJECTS|TECHNICAL\s+PROJECTS)\s*[:\n\r]+([\s\S]+?)(?=(?:WORK\s+EXPERIENCE|PROFESSIONAL\s+EXPERIENCE|EMPLOYMENT\s+HISTORY|INTERNSHIPS?|EXPERIENCE|EDUCATION|TECHNICAL\s+SKILLS|SKILLS|CERTIFICATIONS|ACHIEVEMENTS|AWARDS|LANGUAGES|DECLARATION|$))',
+        r'(?:PROJECT\s+EXPERIENCE|PROJECTS?\s+EXPERIENCE|PROJECTS?|PERSONAL\s+PROJECTS|KEY\s+PROJECTS|ACADEMIC\s+PROJECTS|TECHNICAL\s+PROJECTS|RELEVANT\s+PROJECTS)\s*[:\n\r]+([\s\S]+?)(?=(?:WORK\s+EXPERIENCE|PROFESSIONAL\s+EXPERIENCE|EMPLOYMENT\s+HISTORY|INTERNSHIPS?|EXPERIENCE|EDUCATION|TECHNICAL\s+SKILLS|SKILLS|CERTIFICATIONS|ACHIEVEMENTS|AWARDS|LANGUAGES|DECLARATION|$))',
         text,
         re.IGNORECASE
     )
@@ -630,8 +665,8 @@ def evaluate_projects(text: str, role_projects_criteria: dict, is_fresher: bool 
             "message": "No project section found in resume."
         }
 
-    # 2. Individual Projects me split karein (bullet points '•' ya double newline se)
-    raw_projects = re.split(r'\n\s*[•\-\*]\s*', '\n' + proj_text)
+    # 2. Individual Projects me split karein (bullets ya double newlines se)
+    raw_projects = re.split(r'\n\s*[\u2022\u25cf\u25aa\-\*]\s*|\n\s*\n(?=[A-Z])', '\n' + proj_text)
     raw_projects = [p.strip() for p in raw_projects if len(p.strip()) > 15]
 
     matched_projects = []

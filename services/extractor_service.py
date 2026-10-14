@@ -5,25 +5,61 @@ from fastapi import HTTPException
 from pypdf import PdfReader
 from docx import Document
 from services.candidate_service import fetch_candidate_from_nodejs
+from urllib.parse import urlparse
+from rapidocr_onnxruntime import RapidOCR
+import pymupdf
 
+_ocr_engine = None
+
+def get_ocr_engine():
+    global _ocr_engine
+    if _ocr_engine is None:
+        _ocr_engine = RapidOCR()
+    return _ocr_engine
+
+def extract_text_via_ocr(content: bytes) -> str:
+    """Scanned / Image-only PDF se local OCR dwara text extract karta hai."""
+    try:
+        doc = pymupdf.open(stream=content, filetype="pdf")
+        engine = get_ocr_engine()
+        lines = []
+        for page in doc:
+            pix = page.get_pixmap(dpi=150)
+            img_bytes = pix.tobytes("png")
+            result, _ = engine(img_bytes)
+            if result:
+                for item in result:
+                    lines.append(item[1])
+        return "\n".join(lines).strip()
+    except Exception as e:
+        return ""
 
 def extract_text_from_pdf_bytes(content: bytes) -> dict:
-    """PDF file bytes se text aur page count extract karta hai."""
-    pdf_file = io.BytesIO(content)
-    reader = PdfReader(pdf_file)
-    full_text = ""
-    for page in reader.pages:
-        page_text = page.extract_text() or ""
-        full_text += page_text + "\n"
-        
-    cleaned_text = full_text.strip()
+    """PDF file bytes se text aur page count extract karta hai (PyMuPDF with OCR Fallback)."""
+    try:
+        doc = pymupdf.open(stream=content, filetype="pdf")
+        pages_text = [page.get_text() for page in doc]
+        cleaned_text = "\n".join(pages_text).strip()
+        total_pages = len(doc)
+    except Exception:
+        pdf_file = io.BytesIO(content)
+        reader = PdfReader(pdf_file)
+        full_text = ""
+        for page in reader.pages:
+            full_text += (page.extract_text() or "") + "\n"
+        cleaned_text = full_text.strip()
+        total_pages = len(reader.pages)
+    
+    # Agar digital text 0 nikla (Scanned/Photo PDF), toh Local OCR chalao
+    if not cleaned_text:
+        cleaned_text = extract_text_via_ocr(content)
+
     return {
         "fileType": "pdf",
-        "totalPages": len(reader.pages),
+        "totalPages": total_pages,
         "fullText": cleaned_text,
         "characterCount": len(cleaned_text)
     }
-
 
 def extract_text_from_docx_bytes(content: bytes) -> dict:
     """DOCX file bytes ke paragraphs aur tables se text extract karta hai."""
@@ -74,7 +110,6 @@ def extract_text_from_resume_url(resume_url: str, file_name: str = "") -> dict:
 
         # 🌐 Case 2: Agar Admin Panel se upload hua local resume hai (Relative path starts with '/')
         if resume_url.startswith("/"):
-            from urllib.parse import urlparse
             hrms_base = os.getenv("HRMS_BASE_URL", "http://localhost:5000/api")
             hrms_token = os.getenv("HRMS_AUTH_TOKEN", "")
             

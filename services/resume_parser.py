@@ -4,6 +4,8 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from pypdf import PdfReader
 from docx import Document
+from services.extractor_service import extract_text_via_ocr
+import pymupdf
 
 MONTH_MAP = {
     'jan': 1, 'january': 1, 'feb': 2, 'february': 2, 'mar': 3, 'march': 3,
@@ -13,9 +15,20 @@ MONTH_MAP = {
 }
 
 def extract_text_from_pdf(content: bytes) -> str:
-    pdf_reader = PdfReader(io.BytesIO(content))
-    text_pieces = [page.extract_text() or "" for page in pdf_reader.pages]
-    return "\n".join([t for t in text_pieces if t])
+    """PDF se text extract karta hai (PyMuPDF with OCR Fallback)."""
+    try:
+        doc = pymupdf.open(stream=content, filetype="pdf")
+        text = "\n".join([page.get_text() for page in doc]).strip()
+    except Exception:
+        pdf_reader = PdfReader(io.BytesIO(content))
+        text_pieces = [page.extract_text() or "" for page in pdf_reader.pages]
+        text = "\n".join([t for t in text_pieces if t]).strip()
+    
+    # Agar digital text blank mila, toh Local OCR se nikaalo
+    if not text:
+        text = extract_text_via_ocr(content)
+        
+    return text
 
 def extract_text_from_docx(content: bytes) -> str:
     doc = Document(io.BytesIO(content))
