@@ -15,3 +15,10 @@ __pycache__/
 # IDE files
 .vscode/
 .idea/
+
+# Logs
+logs/
+*.log
+
+# Local Scripts
+start_api.bat
