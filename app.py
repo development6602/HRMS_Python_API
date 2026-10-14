@@ -12,8 +12,7 @@ from typing import Dict, Any
 app = FastAPI(
     title="HRMS AI Resume Screening API",
     description="Python Sidecar Service to fetch, evaluate and parse candidate resumes",
-    version="1.0.0",
-    root_path="/api/ai"
+    version="1.0.0"
 )
 
 # 1. Candidate Details API
